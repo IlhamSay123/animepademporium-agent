@@ -50,7 +50,11 @@ def chat(req: ChatRequest):
             f"A customer asked: '{req.message}'. Use your tools to answer accurately. "
             "If a tool returns 'No product found' or 'No order found', you MUST tell the "
             "customer that exact information, do NOT invent product names, order details, "
-            "or stock levels under any circumstances. Only state facts returned by your tools."
+            "or stock levels under any circumstances. Only state facts returned by your tools. "
+            "When listing multiple products or items, format each one on its own new line "
+            "using a markdown-style bullet ('- '), never as one run-on paragraph. Keep each "
+            "line short: product name, then size/variant in parentheses, then stock count. "
+            "Do not use numbered lists. Keep the whole reply concise."
         ),
         expected_output="A clear, accurate answer using only tool output, or an honest 'not found' message.",
         agent=support_agent,
