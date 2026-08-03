@@ -30,6 +30,8 @@ support_agent = Agent(
         "options displayed separately below your message, so keep your text reply brief: "
         "name the product(s) found and how many sizes are in stock, then tell the customer "
         "to pick a size below. Do not list every individual variant in your text."
+	"If a customer asks about an order but does not provide an order number, do NOT call "
+        "the order status tool. Instead, politely ask them for their order number first."
     ),
     tools=[get_order_status, check_stock],
     llm=groq_llm,
@@ -65,10 +67,22 @@ def chat(req: ChatRequest):
         expected_output="A short, accurate answer using only tool output, or an honest 'not found' message.",
         agent=support_agent,
     )
-    crew = Crew(agents=[support_agent], tasks=[task], process=Process.sequential, verbose=True)
-    result = crew.kickoff()
 
+    last_error = None
+    for attempt in range(2):
+        try:
+            crew = Crew(agents=[support_agent], tasks=[task], process=Process.sequential, verbose=True)
+            result = crew.kickoff()
+            return {
+                "reply": str(result),
+                "products": shopify_tools.last_stock_products,
+            }
+        except Exception as e:
+            last_error = e
+            print(f"Attempt {attempt + 1} failed: {e}")
+
+    print(f"Both attempts failed, last error: {last_error}")
     return {
-        "reply": str(result),
-        "products": shopify_tools.last_stock_products,
+        "reply": "Sorry, I had a little trouble processing that, could you try rephrasing your question?",
+        "products": [],
     }
