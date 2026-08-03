@@ -13,6 +13,9 @@ API_VERSION = "2026-07"
 
 _token_cache = {"token": None, "expires_at": 0}
 
+# Side-channel: the last structured product results, read by server.py after each call
+last_stock_products = []
+
 def _get_access_token():
     if _token_cache["token"] and time.time() < _token_cache["expires_at"]:
         return _token_cache["token"]
@@ -77,6 +80,9 @@ def get_order_status(order_number: str) -> str:
 @tool("Check Product Stock")
 def check_stock(product_title: str) -> str:
     """Check inventory levels for a product by (partial) title match."""
+    global last_stock_products
+    last_stock_products = []
+
     STOPWORDS = {"mousepad", "mouse", "pad", "mat", "desk", "in", "stock",
                  "any", "of", "the", "a", "an", "do", "you", "have", "are",
                  "there", "pads", "mats"}
@@ -88,13 +94,15 @@ def check_stock(product_title: str) -> str:
 
     query = """
     query getProduct($query: String!) {
-      products(first: 3, query: $query) {
+      products(first: 5, query: $query) {
         edges {
           node {
             title
+            handle
             variants(first: 10) {
               edges {
                 node {
+                  id
                   title
                   inventoryQuantity
                 }
@@ -109,10 +117,26 @@ def check_stock(product_title: str) -> str:
     edges = result.get("data", {}).get("products", {}).get("edges", [])
     if not edges:
         return f"No product found matching '{product_title}'."
+
     lines = []
     for edge in edges:
         p = edge["node"]
+        product_url = f"https://{SHOP}.myshopify.com/products/{p['handle']}"
+        variants_out = []
         for v in p["variants"]["edges"]:
             variant = v["node"]
-            lines.append(f"{p['title']} ({variant['title']}): {variant['inventoryQuantity']} in stock")
+            variant_numeric_id = variant["id"].split("/")[-1]
+            qty = variant["inventoryQuantity"]
+            variants_out.append({
+                "label": variant["title"],
+                "stock": qty,
+                "url": f"{product_url}?variant={variant_numeric_id}",
+            })
+            lines.append(f"{p['title']} ({variant['title']}): {qty} in stock")
+        last_stock_products.append({
+            "name": p["title"],
+            "url": product_url,
+            "variants": variants_out,
+        })
+
     return "\n".join(lines)
