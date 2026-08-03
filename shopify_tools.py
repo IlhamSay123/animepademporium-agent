@@ -77,28 +77,6 @@ def get_order_status(order_number: str) -> str:
 @tool("Check Product Stock")
 def check_stock(product_title: str) -> str:
     """Check inventory levels for a product by (partial) title match."""
-    query = """
-    query getProduct($query: String!) {
-      products(first: 3, query: $query) {
-        edges {
-          node {
-            title
-            variants(first: 10) {
-              edges {
-                node {
-                  title
-                  inventoryQuantity
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-    @tool("Check Product Stock")
-def check_stock(product_title: str) -> str:
-    """Check inventory levels for a product by (partial) title match."""
     STOPWORDS = {"mousepad", "mouse", "pad", "mat", "desk", "in", "stock",
                  "any", "of", "the", "a", "an", "do", "you", "have", "are",
                  "there", "pads", "mats"}
