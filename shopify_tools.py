@@ -96,7 +96,38 @@ def check_stock(product_title: str) -> str:
       }
     }
     """
-    result = _graphql(query, {"query": f"title:*{product_title.replace(' ', '*')}*"})
+    @tool("Check Product Stock")
+def check_stock(product_title: str) -> str:
+    """Check inventory levels for a product by (partial) title match."""
+    STOPWORDS = {"mousepad", "mouse", "pad", "mat", "desk", "in", "stock",
+                 "any", "of", "the", "a", "an", "do", "you", "have", "are",
+                 "there", "pads", "mats"}
+    words = [w for w in product_title.lower().split() if w not in STOPWORDS]
+    if not words:
+        words = product_title.lower().split()
+
+    query_str = " AND ".join(f"title:*{w}*" for w in words)
+
+    query = """
+    query getProduct($query: String!) {
+      products(first: 3, query: $query) {
+        edges {
+          node {
+            title
+            variants(first: 10) {
+              edges {
+                node {
+                  title
+                  inventoryQuantity
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    result = _graphql(query, {"query": query_str})
     edges = result.get("data", {}).get("products", {}).get("edges", [])
     if not edges:
         return f"No product found matching '{product_title}'."
