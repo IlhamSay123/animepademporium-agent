@@ -77,16 +77,29 @@ def get_order_status(order_number: str) -> str:
         f"Tracking: {tracking_str}."
     )
 
+CONNECTOR_STOPWORDS = {"in", "stock", "any", "of", "the", "a", "an", "do", "you",
+                        "have", "are", "there", "what", "show", "me", "list",
+                        "all", "please", "some"}
+PRODUCT_STOPWORD_STEMS = {"mousepad", "mouse", "pad", "mat", "desk"}
+
+def _extract_keywords(text):
+    words = []
+    for w in text.lower().split():
+        stem = w.rstrip("s")
+        if w in CONNECTOR_STOPWORDS:
+            continue
+        if w in PRODUCT_STOPWORD_STEMS or stem in PRODUCT_STOPWORD_STEMS:
+            continue
+        words.append(w)
+    return words
+
 @tool("Check Product Stock")
 def check_stock(product_title: str) -> str:
-    """Check inventory levels for a product by (partial) title match."""
+    """Check inventory levels for a product by (partial) title match. Also matches broad category terms like 'anime' or 'video game' to list multiple relevant products."""
     global last_stock_products
     last_stock_products = []
 
-    STOPWORDS = {"mousepad", "mouse", "pad", "mat", "desk", "in", "stock",
-                 "any", "of", "the", "a", "an", "do", "you", "have", "are",
-                 "there", "pads", "mats"}
-    words = [w for w in product_title.lower().split() if w not in STOPWORDS]
+    words = _extract_keywords(product_title)
     if not words:
         words = product_title.lower().split()
 
@@ -94,7 +107,7 @@ def check_stock(product_title: str) -> str:
 
     query = """
     query getProduct($query: String!) {
-      products(first: 5, query: $query) {
+      products(first: 8, query: $query) {
         edges {
           node {
             title
