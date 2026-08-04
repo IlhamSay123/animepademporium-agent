@@ -1,0 +1,149 @@
+<div id="ape-chat-widget">
+  <button id="ape-chat-toggle">💬 Chat with us</button>
+  <div id="ape-chat-box" style="display:none;">
+    <div id="ape-chat-header">
+      AnimePadEmporium Support
+      <span id="ape-chat-close">×</span>
+    </div>
+    <div id="ape-chat-messages"></div>
+    <div id="ape-chat-input-row">
+      <input type="text" id="ape-chat-input" placeholder="Ask about orders or stock..." />
+      <button id="ape-chat-send">Send</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  #ape-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    font-family: inherit;
+  }
+  #ape-chat-toggle {
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #ape-chat-box {
+    width: 320px;
+    height: 420px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  #ape-chat-header {
+    background: #111;
+    color: #fff;
+    padding: 12px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #ape-chat-close {
+    cursor: pointer;
+    font-size: 18px;
+  }
+  #ape-chat-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 13px;
+  }
+  .ape-msg {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    max-width: 85%;
+  }
+  .ape-msg.user {
+    background: #eee;
+    margin-left: auto;
+    text-align: right;
+  }
+  .ape-msg.bot {
+    background: #f3f0ff;
+  }
+  #ape-chat-input-row {
+    display: flex;
+    border-top: 1px solid #eee;
+  }
+  #ape-chat-input {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    font-size: 13px;
+  }
+  #ape-chat-send {
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 0 14px;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  (function() {
+    const API_URL = "https://animepademporium-agent.onrender.com/chat";
+
+    const toggle = document.getElementById("ape-chat-toggle");
+    const box = document.getElementById("ape-chat-box");
+    const close = document.getElementById("ape-chat-close");
+    const messages = document.getElementById("ape-chat-messages");
+    const input = document.getElementById("ape-chat-input");
+    const sendBtn = document.getElementById("ape-chat-send");
+
+    toggle.addEventListener("click", () => {
+      box.style.display = box.style.display === "none" ? "flex" : "none";
+    });
+    close.addEventListener("click", () => {
+      box.style.display = "none";
+    });
+
+    function addMessage(text, sender) {
+      const div = document.createElement("div");
+      div.className = "ape-msg " + sender;
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, "user");
+      input.value = "";
+      addMessage("Typing...", "bot");
+
+      try {
+        const resp = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+        const data = await resp.json();
+        messages.lastChild.remove();
+        addMessage(data.reply || "Sorry, something went wrong.", "bot");
+      } catch (err) {
+        messages.lastChild.remove();
+        addMessage("Sorry, I couldn't reach support right now.", "bot");
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  })();
+</script>

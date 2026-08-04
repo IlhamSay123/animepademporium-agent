@@ -10,7 +10,7 @@ load_dotenv()
 
 groq_llm = LLM(
     model="groq/llama-3.3-70b-versatile",
-    api_key=os.environ[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],
+    api_key=os.environ["GROQ_API_KEY"],
 )
 
 support_agent = Agent(
@@ -24,7 +24,7 @@ support_agent = Agent(
         "and honestly, and never substitute a guess or a made-up example instead."
     ),
     tools=[get_order_status, check_stock],
-    llm=local_llm,
+    llm=groq_llm,
     verbose=True,
 )
 
