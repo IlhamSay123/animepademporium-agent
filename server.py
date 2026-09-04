@@ -13,7 +13,7 @@ _crewai_cache.mark_cache_breakpoint = lambda msg: msg
 load_dotenv()
 
 groq_llm = LLM(
-    model="groq/llama-3.3-70b-versatile",
+    model="groq/openai/gpt-oss-120b",
     api_key=os.environ["GROQ_API_KEY"],
 )
 
