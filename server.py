@@ -42,8 +42,12 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://animepademporium.myshopify.com"],
-    allow_methods=["POST"],
+    allow_origins=[
+        "https://animepademporium.myshopify.com",
+        "https://animepademporium.co.uk",
+        "https://www.animepademporium.co.uk",
+    ],
+    allow_methods=["POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
